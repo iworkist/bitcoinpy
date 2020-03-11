@@ -273,7 +273,14 @@ def verify_txi(tx, txi, idx, testnet=False):
             type(lock_script[1]) == bytes and len(lock_script[1]) == 20 and lock_script[2] == 0x87:
         # the last cmd has to be the redeem_script
         raw_redeem_script = txi["script"][-1]
-        raw_redeem_script = util.int_to_little_endian(len(raw_redeem_script), 1) + raw_redeem_script
+        # encode_varint로 변환해야 하는것 아닌가? 원소사이즈는 max 520bytes
+        # 확인해보니 (지미송)코드에 문제 발견
+        # script.parse에서도 length = util.read_varint(s)로 읽고 있음.
+        # 그래서 encode_varint로 변경
+        # 인코딩: https://github.com/jimmysong/programmingbitcoin/blob/2a6558263923214320bbdeb10826464fe24ef540/code-ch13/tx.py#L313
+        # 디코딩: https://github.com/jimmysong/programmingbitcoin/blob/2a6558263923214320bbdeb10826464fe24ef540/code-ch13/script.py#L78
+        # raw_redeem_script = util.int_to_little_endian(len(raw_redeem_script), 1) + raw_redeem_script
+        raw_redeem_script = util.encode_varint(len(raw_redeem_script)) + raw_redeem_script
         _, redeem_script = script.parse(BytesIO(raw_redeem_script))  # (length, script)
         if script.is_p2wpkh(redeem_script):
             z = sig_hash_bip143(prev_tx, tx, txi, redeem_script=redeem_script, witness_script=None, testnet=testnet)
