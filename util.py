@@ -95,3 +95,14 @@ def encode_varint(i):
         return b'\xff' + int_to_little_endian(i, 8)
     else:
         raise ValueError('integer too large: {}'.format(i))
+
+
+def bits_to_target(bits):
+    """Turns bits into a target (large 256-bit integer)"""
+    # last byte is exponent
+    exponent = bits[-1]
+    # the first three bytes are the coefficient in little endian
+    coefficient = little_endian_to_int(bits[:-1])
+    # the formula is:
+    # coefficient * 256**(exponent-3)
+    return coefficient * 256 ** (exponent - 3)
