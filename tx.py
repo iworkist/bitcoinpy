@@ -2,7 +2,6 @@ import util
 import script
 import copy
 import requests
-import ecc
 from io import BytesIO
 from logging import getLogger
 

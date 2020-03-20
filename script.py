@@ -1,5 +1,4 @@
 import op
-import ecc
 import util
 from io import BytesIO
 from logging import getLogger

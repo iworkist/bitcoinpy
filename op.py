@@ -662,7 +662,7 @@ def op_checksig(stack, z):
         # point = S256Point.parse(sec_pubkey)
         pub_key = ecc.parse_sec(sec_pubkey)
         # sig = Signature.parse(der_signature)
-        sig = ecc.parse_sig_der(der_signature)
+        sig = ecc.parse_der(der_signature)
     except (ValueError, SyntaxError) as e:
         LOGGER.info(e)
         return False
@@ -705,7 +705,7 @@ def op_checkmultisig(stack, z):
 
         # parse all the signatures
         # sigs = [Signature.parse(der) for der in der_signatures]
-        sigs = [ecc.sig_der(der) for der in der_signatures]
+        sigs = [ecc.der(der) for der in der_signatures]
 
         # loop through the signatures
         for sig in sigs:

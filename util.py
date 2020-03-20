@@ -97,12 +97,22 @@ def encode_varint(i):
         raise ValueError('integer too large: {}'.format(i))
 
 
-def bits_to_target(bits):
-    """Turns bits into a target (large 256-bit integer)"""
-    # last byte is exponent
-    exponent = bits[-1]
-    # the first three bytes are the coefficient in little endian
-    coefficient = little_endian_to_int(bits[:-1])
-    # the formula is:
-    # coefficient * 256**(exponent-3)
-    return coefficient * 256 ** (exponent - 3)
+def h160_to_p2pkh_address(h160, testnet=False):
+    """Takes a byte sequence hash160 and returns a p2pkh address string"""
+    # p2pkh has a prefix of b'\x00' for mainnet, b'\x6f' for testnet
+    if testnet:
+        prefix = b'\x6f'
+    else:
+        prefix = b'\x00'
+    return encode_base58_checksum(prefix + h160)
+
+
+def h160_to_p2sh_address(h160, testnet=False):
+    """Takes a byte sequence hash160 and returns a p2sh address string"""
+    # p2sh has a prefix of b'\x05' for mainnet, b'\xc4' for testnet
+    if testnet:
+        prefix = b'\xc4'
+    else:
+        prefix = b'\x05'
+    return encode_base58_checksum(prefix + h160)
+

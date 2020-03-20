@@ -21,7 +21,7 @@ print(address)
 
 sig = ecc.sig(sec_key, 999)
 print('sig', sig)
-print('sig_der', ecc.sig_der(sig))
+print('der', ecc.der(sig))
 
 res = ecc.verify_sig(address['pub_key'], sig, 999)
 print('sig_verification', res)

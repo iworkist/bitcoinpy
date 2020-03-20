@@ -153,7 +153,7 @@ def test_create_legacy_tx():
     print(z)
 
     sig = ecc.sig(sec_key, z)
-    der = ecc.sig_der(sig)
+    der = ecc.der(sig)
 
     pub_key = ecc.ecc_mul(sec_key)
     sec = ecc.sec(pub_key[0], pub_key[1], False)

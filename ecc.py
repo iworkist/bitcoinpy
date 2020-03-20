@@ -216,7 +216,7 @@ def sig(sec_key, z):
     return r, s
 
 
-def sig_der(sig):
+def der(sig):
     rbin = sig[0].to_bytes(32, byteorder='big')
     # remove all null bytes at the beginning
     rbin = rbin.lstrip(b'\x00')
@@ -234,7 +234,7 @@ def sig_der(sig):
     return bytes([0x30, len(result)]) + result
 
 
-def parse_sig_der(signature_bin):
+def parse_der(signature_bin):
     s = BytesIO(signature_bin)
     compound = s.read(1)[0]
     if compound != 0x30:

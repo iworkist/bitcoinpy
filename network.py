@@ -1,8 +1,9 @@
 import util
 import block
 import time
+import merkletree as mt
+import bloomfilter
 from random import randint
-from io import BytesIO
 
 TX_DATA_TYPE = 1
 BLOCK_DATA_TYPE = 2
@@ -290,3 +291,87 @@ def serialize_getdata(payload):
 payload_parsers = {
     b'verack': parse_verack
 }
+
+
+# command = b'merkleblock'
+def gen_merkleblock(version, prev_block_hash, merkle_root, timestamp, bits, nonce, total, hashes, flags):
+    return {
+        'version': version,
+        'prev_block_hash': prev_block_hash,
+        'merkle_root': merkle_root,
+        'timestamp': timestamp,
+        'bits': bits,
+        'nonce': nonce,
+        'total': total,
+        'hashes': hashes,
+        'flags': flags
+    }
+
+
+def parse_merkleblock(s):
+    """Takes a byte stream and parses a merkle block. Returns a Merkle Block object"""
+    # version - 4 bytes, Little-Endian integer
+    version = util.little_endian_to_int(s.read(4))
+    # prev_block - 32 bytes, Little-Endian (use [::-1])
+    prev_block_hash = s.read(32)[::-1]
+    # merkle_root - 32 bytes, Little-Endian (use [::-1])
+    merkle_root = s.read(32)[::-1]
+    # timestamp - 4 bytes, Little-Endian integer
+    timestamp = util.little_endian_to_int(s.read(4))
+    # bits - 4 bytes
+    bits = s.read(4)
+    # nonce - 4 bytes
+    nonce = s.read(4)
+    # total transactions in block - 4 bytes, Little-Endian integer
+    total = util.little_endian_to_int(s.read(4))
+    # number of transaction hashes - varint
+    num_hashes = util.read_varint(s)
+    # each transaction is 32 bytes, Little-Endian
+    hashes = []
+    for _ in range(num_hashes):
+        hashes.append(s.read(32)[::-1])
+    # length of flags field - varint
+    flags_length = util.read_varint(s)
+    # read the flags field
+    flags = s.read(flags_length)
+
+    return {
+        'version': version,
+        'prev_block_hash': prev_block_hash,
+        'merkle_root': merkle_root,
+        'timestamp': timestamp,
+        'bits': bits,
+        'nonce': nonce,
+        'total': total,
+        'hashes': hashes,
+        'flags': flags
+    }
+
+
+def is_valid_merkleblock(merkleblock):
+    """Verifies whether the merkle tree information validates to the merkle root"""
+    # convert the flags field to a bit field
+    flag_bits = bloomfilter.bytes_to_bit_field(merkleblock['flags'])
+    # reverse self.hashes for the merkle root calculation
+    hashes = [h[::-1] for h in merkleblock['hashes']]
+    # initialize the merkle tree
+    merkle_tree = mt.MerkleTree(merkleblock['total'])
+    # populate the tree with flag bits and hashes
+    merkle_tree.populate_tree(flag_bits, hashes)
+    # check if the computed root reversed is the same as the merkle root
+    return merkle_tree.root()[::-1] == merkleblock['merkle_root']
+
+
+def serialize_filterload(payload, flag=1):
+    """Return the filterload message"""
+    # start the payload with the size of the filter in bytes
+    result = util.encode_varint(payload['size'])
+    # next add the bit field using self.filter_bytes()
+    result += bloomfilter.bit_field_to_bytes(payload['bit_field'])
+    # function count is 4 bytes little endian
+    result += util.int_to_little_endian(payload['function_count'], 4)
+    # tweak is 4 bytes little endian
+    result += util.int_to_little_endian(payload['tweak'], 4)
+    # flag is 1 byte little endian
+    result += util.int_to_little_endian(flag, 1)
+    return result
